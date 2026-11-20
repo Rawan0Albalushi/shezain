@@ -1,7 +1,7 @@
 import { Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import AdminLayout from '../../Components/AdminLayout';
-import { CheckIcon } from '../../Components/AdminIcons';
+import { CheckIcon, EyeIcon } from '../../Components/AdminIcons';
 import { applyQuery, IconButton, Ledger, Sheet, StatusMark } from '../../Components/AdminUi';
 import Pager from '../../Components/Pager';
 import { useLocale } from '../../hooks';
@@ -80,6 +80,9 @@ export default function Messages({ messages, filters, counts }) {
                                         {message.read_at && <div className="sub">{message.read_at}</div>}
                                     </td>
                                     <td className="actions-cell">
+                                        <IconButton label={t('viewMessage')} href={`/admin/messages/${message.id}`}>
+                                            <EyeIcon />
+                                        </IconButton>
                                         {!message.read_at && (
                                             <IconButton
                                                 label={t('markRead')}

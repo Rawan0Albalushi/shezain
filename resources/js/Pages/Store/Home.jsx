@@ -130,7 +130,13 @@ export default function Home({ filters, products, slides }) {
                                 </div>
                                 <h3>{localized(locale, product, 'name')}</h3>
                                 <div className="product-meta">
-                                    <span>{product.sizes.join(' · ')}</span>
+                                    <span className="card-options">
+                                        <span className="sr-only">{(product.colors ?? []).map((color) => localized(locale, color, 'color')).join(' · ')}</span>
+                                        {(product.colors ?? []).map((color) => (
+                                            <span key={color.color_ar} className="swatch" style={color.swatch ? { background: color.swatch } : undefined} />
+                                        ))}
+                                        <span>{product.sizes.join(' · ')}</span>
+                                    </span>
                                     <span className="price">{product.price_formatted} {t('price')}</span>
                                 </div>
                             </Link>

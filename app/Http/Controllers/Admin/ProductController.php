@@ -12,6 +12,7 @@ use App\Support\Catalog;
 use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -118,6 +119,42 @@ class ProductController extends Controller
         return redirect()->route('admin.products.edit', $product)->with('success', __('store.saved'));
     }
 
+    public function show(Product $product): Response
+    {
+        $product->load(['category:id,name_ar,name_en', 'images', 'variants']);
+
+        return Inertia::render('Admin/Products/Show', [
+            'product' => [
+                'id' => $product->id,
+                'slug' => $product->slug,
+                'name_ar' => $product->name_ar,
+                'name_en' => $product->name_en,
+                'description_ar' => $product->description_ar,
+                'description_en' => $product->description_en,
+                'fabric_ar' => $product->fabric_ar,
+                'fabric_en' => $product->fabric_en,
+                'price' => Money::format($product->price),
+                'is_active' => $product->is_active,
+                'category_ar' => $product->category?->name_ar,
+                'category_en' => $product->category?->name_en,
+                'stock' => (int) $product->variants->sum('stock'),
+                'images' => $product->images
+                    ->map(fn ($image) => Catalog::imageUrl($image))
+                    ->filter()
+                    ->values()
+                    ->all(),
+                'variants' => $product->variants->map(fn ($variant) => [
+                    'size' => $variant->size,
+                    'color_ar' => $variant->color_ar,
+                    'color_en' => $variant->color_en,
+                    'swatch' => $variant->color_hex,
+                    'sku' => $variant->sku,
+                    'stock' => $variant->stock,
+                ])->values()->all(),
+            ],
+        ]);
+    }
+
     public function edit(Product $product): Response
     {
         $product->load(['images', 'variants']);
@@ -172,42 +209,57 @@ class ProductController extends Controller
      */
     private function syncVariants(Product $product, array $variants): void
     {
-        $kept = [];
+        DB::transaction(function () use ($product, $variants) {
+            $kept = [];
 
-        foreach ($variants as $row) {
-            $skuTaken = ProductVariant::query()
-                ->where('sku', $row['sku'])
-                ->when(! empty($row['id']), fn ($query) => $query->where('id', '!=', $row['id']))
-                ->exists();
-
-            if ($skuTaken) {
-                throw ValidationException::withMessages(['variants' => 'رمز SKU مستخدم: '.$row['sku']]);
+            foreach ($variants as $row) {
+                if (! empty($row['id'])) {
+                    $kept[] = (int) $row['id'];
+                }
             }
 
-            if (! empty($row['id'])) {
-                $variant = $product->variants()->whereKey($row['id'])->firstOrFail();
+            $product->variants()->whereNotIn('id', $kept)->get()->each(function (ProductVariant $variant) {
+                if (OrderItem::query()->where('variant_id', $variant->id)->exists()) {
+                    throw ValidationException::withMessages(['variants' => 'لا يمكن حذف مقاس ولون مرتبطين بطلب.']);
+                }
+
+                $variant->delete();
+            });
+
+            $product->variants()->whereIn('id', $kept)->get()->each(function (ProductVariant $variant) {
                 $variant->update([
+                    'size' => 'tmp',
+                    'color_ar' => 'tmp-'.$variant->id,
+                    'color_en' => 'tmp-'.$variant->id,
+                    'sku' => 'tmp-'.$variant->id,
+                ]);
+            });
+
+            foreach ($variants as $row) {
+                $skuTaken = ProductVariant::query()
+                    ->where('sku', $row['sku'])
+                    ->when(! empty($row['id']), fn ($query) => $query->where('id', '!=', $row['id']))
+                    ->exists();
+
+                if ($skuTaken) {
+                    throw ValidationException::withMessages(['variants' => 'رمز SKU مستخدم: '.$row['sku']]);
+                }
+
+                $attributes = [
                     'size' => $row['size'],
+                    'color_ar' => $row['color_ar'],
+                    'color_en' => $row['color_en'],
+                    'color_hex' => $row['color_hex'] ?? null,
                     'sku' => $row['sku'],
                     'stock' => $row['stock'],
-                ]);
-            } else {
-                $variant = $product->variants()->create([
-                    'size' => $row['size'],
-                    'sku' => $row['sku'],
-                    'stock' => $row['stock'],
-                ]);
+                ];
+
+                if (! empty($row['id'])) {
+                    $product->variants()->whereKey($row['id'])->firstOrFail()->update($attributes);
+                } else {
+                    $product->variants()->create($attributes);
+                }
             }
-
-            $kept[] = $variant->id;
-        }
-
-        $product->variants()->whereNotIn('id', $kept)->get()->each(function (ProductVariant $variant) {
-            if (OrderItem::query()->where('variant_id', $variant->id)->exists()) {
-                throw ValidationException::withMessages(['variants' => 'لا يمكن حذف مقاس مرتبط بطلب.']);
-            }
-
-            $variant->delete();
         });
     }
 

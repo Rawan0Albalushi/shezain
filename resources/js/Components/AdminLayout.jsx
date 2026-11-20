@@ -1,6 +1,6 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
-import { CloseIcon, GridIcon, LogoutIcon, MailIcon, MenuIcon, ReceiptIcon, StoreIcon, TagIcon, TruckIcon, TypeIcon } from './AdminIcons';
+import { ChartIcon, CloseIcon, GridIcon, LogoutIcon, MailIcon, MenuIcon, ReceiptIcon, StoreIcon, TagIcon, TruckIcon, TypeIcon } from './AdminIcons';
 import { useLocale } from '../hooks';
 
 const groups = [
@@ -10,6 +10,7 @@ const groups = [
             ['/admin', 'dashboard', GridIcon],
             ['/admin/products', 'products', TagIcon],
             ['/admin/orders', 'adminOrders', ReceiptIcon],
+            ['/admin/reports', 'reports', ChartIcon],
         ],
     },
     {

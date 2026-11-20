@@ -46,6 +46,25 @@ class DatabaseSeeder extends Seeder
             ['slug' => 'aseel', 'category' => 'vip', 'name_ar' => 'عباية أصيل', 'name_en' => 'Aseel abaya', 'price' => 145000, 'image' => 'brand/winter.jpg', 'fabric_ar' => 'مخمل ناعم', 'fabric_en' => 'Soft velvet', 'description_ar' => 'حضور للمساء، بقماش أثقل وتفاصيل يدوية.', 'description_en' => 'An evening presence, in a richer cloth with hand-finished detail.'],
         ];
 
+        $black = ['أسود', 'Black', '#1C1C1C', 'BLK'];
+        $navy = ['كحلي', 'Navy', '#1B2A4A', 'NVY'];
+        $sand = ['رملي', 'Sand', '#C4A574', 'SND'];
+        $beige = ['بيج', 'Beige', '#D7C4A3', 'BEI'];
+        $burgundy = ['عنابي', 'Burgundy', '#6B2430', 'BRG'];
+        $olive = ['زيتي', 'Olive', '#4E5340', 'OLV'];
+        $ink = ['حبري', 'Ink', '#16181D', 'INK'];
+        $grey = ['رمادي', 'Grey', '#8A8680', 'GRY'];
+        $colors = [
+            'layali' => [$black, $navy],
+            'misk' => [$ink, $burgundy],
+            'dafa' => [$black, $olive],
+            'ghayma' => [$grey, $black],
+            'naseem' => [$sand, $beige],
+            'leen' => [$black, $beige],
+            'malika' => [$black, $burgundy],
+            'aseel' => [$black, $navy],
+        ];
+
         foreach ($products as $row) {
             $category = Category::query()->where('slug', $row['category'])->firstOrFail();
             $product = Product::query()->updateOrCreate(
@@ -67,12 +86,17 @@ class DatabaseSeeder extends Seeder
             $product->images()->create(['path' => $row['image'], 'sort' => 1]);
             $product->variants()->delete();
 
-            foreach (['52', '54', '56', '58', '60'] as $size) {
-                $product->variants()->create([
-                    'size' => $size,
-                    'sku' => strtoupper($row['slug']).'-'.$size,
-                    'stock' => 4,
-                ]);
+            foreach ($colors[$row['slug']] as [$colorAr, $colorEn, $hex, $code]) {
+                foreach (['52', '54', '56', '58', '60'] as $size) {
+                    $product->variants()->create([
+                        'size' => $size,
+                        'color_ar' => $colorAr,
+                        'color_en' => $colorEn,
+                        'color_hex' => $hex,
+                        'sku' => strtoupper($row['slug']).'-'.$code.'-'.$size,
+                        'stock' => 4,
+                    ]);
+                }
             }
         }
 

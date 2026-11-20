@@ -34,6 +34,19 @@ class ShippingController extends Controller
         ]);
     }
 
+    public function show(ShippingRate $rate): Response
+    {
+        return Inertia::render('Admin/Shipping/Show', [
+            'rate' => [
+                'id' => $rate->id,
+                'governorate_ar' => $rate->governorate_ar,
+                'governorate_en' => $rate->governorate_en,
+                'fee' => Money::format($rate->fee),
+                'is_active' => $rate->is_active,
+            ],
+        ]);
+    }
+
     public function update(Request $request): RedirectResponse
     {
         $data = $request->validate([

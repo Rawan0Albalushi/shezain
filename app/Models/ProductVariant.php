@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['product_id', 'size', 'sku', 'stock'])]
+#[Fillable(['product_id', 'size', 'color_ar', 'color_en', 'color_hex', 'sku', 'stock'])]
 class ProductVariant extends Model
 {
     protected function casts(): array

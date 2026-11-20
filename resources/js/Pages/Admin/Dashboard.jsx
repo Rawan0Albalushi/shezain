@@ -11,7 +11,7 @@ export default function Dashboard({ stats, orders, today }) {
         <AdminLayout title={t('dashboard')} lede={t('dashboardIntro')}>
             <Ledger
                 items={[
-                    { key: 'sales', value: `${stats.paid_total} ${t('price')}`, label: t('salesConfirmed'), href: '/admin/orders' },
+                    { key: 'sales', value: `${stats.paid_total} ${t('price')}`, label: t('salesConfirmed'), href: '/admin/reports?period=all' },
                     { key: 'today', value: stats.today, label: t('todayOrders'), href: `/admin/orders?from=${today}&to=${today}` },
                     { key: 'pending', value: stats.pending, label: t('pending_payment'), href: '/admin/orders?status=pending_payment' },
                     { key: 'fulfill', value: stats.to_fulfill, label: t('toFulfill'), href: '/admin/orders?status=fulfill' },

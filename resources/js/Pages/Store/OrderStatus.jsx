@@ -1,7 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
 import StoreLayout from '../../Components/StoreLayout';
 import { useLocale } from '../../hooks';
-import { localized } from '../../i18n';
+import { localized, variantSummary } from '../../i18n';
 
 export default function OrderStatus({ order, outcome }) {
     const { locale, t } = useLocale();
@@ -20,7 +20,7 @@ export default function OrderStatus({ order, outcome }) {
                 <p className="prose">{note}</p>
                 {order.items.map((item, index) => (
                     <div className="split" key={index}>
-                        <span>{localized(locale, item, 'name')} · {item.size} × {item.quantity}</span>
+                        <span>{localized(locale, item, 'name')} · {variantSummary(locale, item)} × {item.quantity}</span>
                         <span>{item.line_total}</span>
                     </div>
                 ))}

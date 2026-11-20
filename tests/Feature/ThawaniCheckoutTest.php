@@ -7,11 +7,13 @@ use App\Models\Category;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Models\ShippingRate;
 use App\Models\User;
 use App\Services\Thawani\WebhookSignature;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class ThawaniCheckoutTest extends TestCase
@@ -49,6 +51,13 @@ class ThawaniCheckoutTest extends TestCase
 
         $this->assertSame(2, $variant->fresh()->stock);
         $this->assertDatabaseHas('orders', ['status' => OrderStatus::PendingPayment->value, 'total' => 92000]);
+        $this->assertDatabaseHas('order_items', [
+            'variant_id' => $variant->id,
+            'size' => '54',
+            'color_ar' => 'كحلي',
+            'color_en' => 'Navy',
+            'color_hex' => '#1B2A4A',
+        ]);
         $this->assertDatabaseHas('payments', ['session_id' => 'sess_123', 'amount_baisa' => 92000, 'status' => 'unpaid']);
     }
 
@@ -194,7 +203,7 @@ class ThawaniCheckoutTest extends TestCase
     }
 
     /**
-     * @return array{0: \App\Models\ProductVariant, 1: Product}
+     * @return array{0: ProductVariant, 1: Product}
      */
     private function catalog(): array
     {
@@ -220,6 +229,9 @@ class ThawaniCheckoutTest extends TestCase
 
         $variant = $product->variants()->create([
             'size' => '54',
+            'color_ar' => 'كحلي',
+            'color_en' => 'Navy',
+            'color_hex' => '#1B2A4A',
             'sku' => 'LAYALI-54',
             'stock' => 4,
         ]);
@@ -252,7 +264,7 @@ class ThawaniCheckoutTest extends TestCase
         $variant->decrement('stock');
 
         $order = Order::query()->create([
-            'public_id' => (string) \Illuminate\Support\Str::uuid(),
+            'public_id' => (string) Str::uuid(),
             'number' => 'SZ'.random_int(100000, 999999),
             'customer_name' => 'روضة',
             'phone' => '96890000000',
@@ -274,6 +286,9 @@ class ThawaniCheckoutTest extends TestCase
             'name_ar' => 'ليالي',
             'name_en' => 'Layali',
             'size' => '54',
+            'color_ar' => 'كحلي',
+            'color_en' => 'Navy',
+            'color_hex' => '#1B2A4A',
             'sku' => 'LAYALI-54',
             'unit_price' => 45000,
             'quantity' => 1,

@@ -26,6 +26,17 @@ export function TagIcon() {
     );
 }
 
+export function ChartIcon() {
+    return (
+        <Glyph>
+            <path d="M4 19.5h16" />
+            <path d="M7 19.5v-6" />
+            <path d="M12 19.5V6.5" />
+            <path d="M17 19.5v-9" />
+        </Glyph>
+    );
+}
+
 export function ReceiptIcon() {
     return (
         <Glyph>

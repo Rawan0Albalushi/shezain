@@ -112,7 +112,9 @@ class OrderController extends Controller
             $order->update(['status' => $next]);
         }
 
-        return back()->with('success', __('store.saved'));
+        return back()->with('success', __('store.status_updated', [
+            'status' => __('store.statuses.'.$next->value),
+        ]));
     }
 
     private function muscatBoundary(string $value, bool $start): ?Carbon

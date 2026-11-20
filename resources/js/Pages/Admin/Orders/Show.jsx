@@ -1,12 +1,72 @@
+import { useState } from 'react';
 import { useForm } from '@inertiajs/react';
 import AdminLayout from '../../../Components/AdminLayout';
 import { Sheet, StatusMark } from '../../../Components/AdminUi';
 import { useLocale } from '../../../hooks';
 import { localized } from '../../../i18n';
 
+const fulfillment = ['pending_payment', 'paid', 'processing', 'shipped', 'delivered'];
+
 export default function Show({ order, transitions }) {
     const { locale, t } = useLocale();
-    const form = useForm({ status: transitions[0] ?? '' });
+    const form = useForm({ status: '' });
+    const [pendingStatus, setPendingStatus] = useState(null);
+    const currentIndex = fulfillment.indexOf(order.status);
+    const forward = transitions.filter((status) => status !== 'cancelled');
+    const canCancel = transitions.includes('cancelled');
+
+    function hint(status) {
+        if (status === 'cancelled') {
+            return t(order.status === 'pending_payment' ? 'statusHint_cancel_hold' : 'statusHint_cancel_paid');
+        }
+
+        return t(`statusHint_${status}`);
+    }
+
+    function confirmText(status) {
+        const mark = locale === 'ar' ? '؟' : '?';
+
+        return `${t('confirmStatusTo')} ${t(status)}${mark}`;
+    }
+
+    function submit(status) {
+        form.clearErrors();
+        form.transform(() => ({ status }));
+        form.patch(`/admin/orders/${order.id}`, {
+            onFinish: () => setPendingStatus(null),
+        });
+    }
+
+    function StatusAction({ status, tone }) {
+        const confirming = pendingStatus === status;
+        const buttonClass = tone === 'cancel' ? 'status-cancel' : 'primary';
+
+        return (
+            <div className="status-action">
+                {confirming ? (
+                    <>
+                        <p className={tone === 'cancel' ? 'status-warn' : 'status-ask'}>{confirmText(status)}</p>
+                        <div className="status-confirm">
+                            <button type="button" className={buttonClass} disabled={form.processing} onClick={() => submit(status)}>
+                                {t('confirmStatus')}
+                            </button>
+                            <button type="button" className="status-dismiss" disabled={form.processing} onClick={() => setPendingStatus(null)}>
+                                {t('back')}
+                            </button>
+                        </div>
+                        <p className="sub">{hint(status)}</p>
+                    </>
+                ) : (
+                    <>
+                        <button type="button" className={buttonClass} disabled={form.processing} onClick={() => setPendingStatus(status)}>
+                            {t(`statusAction_${status}`)}
+                        </button>
+                        <p className="sub">{hint(status)}</p>
+                    </>
+                )}
+            </div>
+        );
+    }
 
     return (
         <AdminLayout
@@ -49,6 +109,7 @@ export default function Show({ order, transitions }) {
                         <thead>
                             <tr>
                                 <th>{t('products')}</th>
+                                <th>{t('color')}</th>
                                 <th>{t('size')}</th>
                                 <th>{t('sku')}</th>
                                 <th>{t('quantity')}</th>
@@ -60,6 +121,12 @@ export default function Show({ order, transitions }) {
                             {order.items.map((item, index) => (
                                 <tr key={`${item.sku ?? index}`}>
                                     <td>{localized(locale, item, 'name')}</td>
+                                    <td>
+                                        <span className="color-cell">
+                                            <span className="swatch" style={item.swatch ? { background: item.swatch } : undefined} />
+                                            {localized(locale, item, 'color')}
+                                        </span>
+                                    </td>
                                     <td>{item.size}</td>
                                     <td className="num">{item.sku}</td>
                                     <td className="num">{item.quantity}</td>
@@ -80,25 +147,32 @@ export default function Show({ order, transitions }) {
                 </div>
             </Sheet>
             <Sheet title={t('updateStatus')}>
-                {transitions.length === 0 ? (
-                    <p className="sheet-note">{t('noStatusChange')}</p>
-                ) : (
-                    <form
-                        className="status-form"
-                        onSubmit={(event) => {
-                            event.preventDefault();
-                            form.patch(`/admin/orders/${order.id}`);
-                        }}
-                    >
-                        <label className="field">
-                            <span>{t('status')}</span>
-                            <select value={form.data.status} onChange={(event) => form.setData('status', event.target.value)}>
-                                {transitions.map((status) => <option key={status} value={status}>{t(status)}</option>)}
-                            </select>
-                        </label>
-                        <button className="primary" type="submit" disabled={form.processing}>{t('save')}</button>
-                    </form>
-                )}
+                <div className="status-panel">
+                    {currentIndex >= 0 && (
+                        <ol className="status-path" aria-label={t('statusPath')}>
+                            {fulfillment.map((status, index) => {
+                                const state = index < currentIndex ? 'is-done' : index === currentIndex ? 'is-current' : 'is-ahead';
+
+                                return (
+                                    <li key={status} className={state} aria-current={index === currentIndex ? 'step' : undefined}>
+                                        <span className="status-path-mark" aria-hidden="true" />
+                                        <span>{t(status)}</span>
+                                    </li>
+                                );
+                            })}
+                        </ol>
+                    )}
+                    <p className="status-now">{t(`statusNow_${order.status}`)}</p>
+                    {(forward.length > 0 || canCancel) && (
+                        <div className="status-actions">
+                            {forward.map((status) => (
+                                <StatusAction key={status} status={status} tone="forward" />
+                            ))}
+                            {canCancel && <StatusAction status="cancelled" tone="cancel" />}
+                        </div>
+                    )}
+                    {form.errors.status && <p className="error-text" role="alert">{form.errors.status}</p>}
+                </div>
             </Sheet>
         </AdminLayout>
     );

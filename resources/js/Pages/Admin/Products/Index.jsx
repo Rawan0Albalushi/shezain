@@ -100,7 +100,7 @@ export default function Index({ products, categories, filters, totals }) {
                                                 ? <img src={product.image} alt="" />
                                                 : <span className="thumb-fallback" aria-hidden="true" />}
                                             <div>
-                                                <Link href={`/admin/products/${product.id}/edit`}>{product.name_ar}</Link>
+                                                <Link href={`/admin/products/${product.id}`}>{product.name_ar}</Link>
                                                 <div className="sub">{product.name_en}</div>
                                             </div>
                                         </div>
@@ -116,14 +116,12 @@ export default function Index({ products, categories, filters, totals }) {
                                         <StatusMark status={product.is_active ? 'active' : 'hidden'} label={product.is_active ? t('visible') : t('hidden')} />
                                     </td>
                                     <td className="actions-cell">
+                                        <IconButton label={t('viewProduct')} href={`/admin/products/${product.id}`}>
+                                            <EyeIcon />
+                                        </IconButton>
                                         <IconButton label={t('edit')} href={`/admin/products/${product.id}/edit`}>
                                             <PencilIcon />
                                         </IconButton>
-                                        {product.is_active && (
-                                            <IconButton label={t('viewOnStore')} href={`/products/${product.slug}`}>
-                                                <EyeIcon />
-                                            </IconButton>
-                                        )}
                                         <IconButton
                                             label={product.is_active ? t('hideFromStore') : t('showInStore')}
                                             onClick={() => router.patch(`/admin/products/${product.id}/visibility`, {}, { preserveScroll: true })}

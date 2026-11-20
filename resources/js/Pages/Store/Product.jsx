@@ -13,6 +13,33 @@ export default function Product({ product }) {
         quantity: 1,
     });
     const selected = product.variants.find((variant) => variant.id === Number(form.data.variant_id));
+    const colors = [];
+    const seenColors = new Set();
+
+    product.variants.forEach((variant) => {
+        if (!seenColors.has(variant.color_ar)) {
+            seenColors.add(variant.color_ar);
+            colors.push(variant);
+        }
+    });
+
+    const sizes = product.variants.filter((variant) => variant.color_ar === selected?.color_ar);
+
+    function selectVariant(variant) {
+        const stock = variant?.stock ?? 0;
+        const quantity = stock < 1 ? 1 : Math.min(Math.max(1, form.data.quantity), Math.min(10, stock));
+        form.setData({ variant_id: variant.id, quantity });
+    }
+
+    function selectColor(colorAr) {
+        const match = product.variants.find((variant) => variant.color_ar === colorAr && variant.size === selected?.size && variant.stock > 0)
+            ?? product.variants.find((variant) => variant.color_ar === colorAr && variant.stock > 0)
+            ?? product.variants.find((variant) => variant.color_ar === colorAr);
+
+        if (match) {
+            selectVariant(match);
+        }
+    }
 
     function submit(event) {
         event.preventDefault();
@@ -44,16 +71,54 @@ export default function Product({ product }) {
                         <p className="price" style={{ fontSize: 22 }}>{product.price_formatted} {t('price')}</p>
                         <p className="prose">{localized(locale, product, 'description')}</p>
                         <p className="muted">{t('fabric')}: {localized(locale, product, 'fabric')}</p>
-                        <label>
-                            {t('size')}
-                            <select value={form.data.variant_id} onChange={(event) => form.setData('variant_id', Number(event.target.value))}>
-                                {product.variants.map((variant) => (
-                                    <option key={variant.id} value={variant.id} disabled={variant.stock < 1}>
-                                        {variant.size} {variant.stock < 1 ? `— ${t('unavailable')}` : `— ${t('stock')} ${variant.stock}`}
-                                    </option>
-                                ))}
-                            </select>
-                        </label>
+                        {colors.length > 0 && (
+                            <fieldset className="option-field">
+                                <legend>{t('color')}</legend>
+                                <div className="option-row">
+                                    {colors.map((color) => {
+                                        const active = selected?.color_ar === color.color_ar;
+
+                                        return (
+                                            <label key={color.color_ar} className={active ? 'option-chip is-selected' : 'option-chip'}>
+                                                <input
+                                                    type="radio"
+                                                    name="color"
+                                                    checked={active}
+                                                    onChange={() => selectColor(color.color_ar)}
+                                                />
+                                                <span className="swatch" style={color.swatch ? { background: color.swatch } : undefined} />
+                                                {localized(locale, color, 'color')}
+                                            </label>
+                                        );
+                                    })}
+                                </div>
+                            </fieldset>
+                        )}
+                        {sizes.length > 0 && (
+                            <fieldset className="option-field">
+                                <legend>{t('size')}</legend>
+                                <div className="option-row">
+                                    {sizes.map((variant) => {
+                                        const active = selected?.id === variant.id;
+                                        const unavailable = variant.stock < 1;
+
+                                        return (
+                                            <label key={variant.id} className={`option-chip${active ? ' is-selected' : ''}${unavailable ? ' is-disabled' : ''}`}>
+                                                <input
+                                                    type="radio"
+                                                    name="size"
+                                                    checked={active}
+                                                    disabled={unavailable}
+                                                    onChange={() => selectVariant(variant)}
+                                                />
+                                                {variant.size}
+                                                {unavailable && <span className="sr-only">{t('unavailable')}</span>}
+                                            </label>
+                                        );
+                                    })}
+                                </div>
+                            </fieldset>
+                        )}
                         <label>
                             {t('quantity')}
                             <input
@@ -64,6 +129,9 @@ export default function Product({ product }) {
                                 onChange={(event) => form.setData('quantity', Number(event.target.value))}
                             />
                         </label>
+                        {selected && (
+                            <p className="muted">{selected.stock < 1 ? t('unavailable') : `${t('stock')} ${selected.stock}`}</p>
+                        )}
                         {form.errors.variant_id && <p className="error-text">{form.errors.variant_id}</p>}
                         <button className="primary" type="submit" disabled={form.processing || !selected || selected.stock < 1}>
                             {t('add')}

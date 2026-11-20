@@ -39,7 +39,12 @@ final class Catalog
                 'name_en' => $product->category->name_en,
             ],
             'image' => self::imageUrl($product->images->sortBy('sort')->first()),
-            'sizes' => $product->variants->pluck('size')->all(),
+            'sizes' => $product->variants->pluck('size')->unique()->values()->all(),
+            'colors' => $product->variants->unique('color_ar')->map(fn ($variant) => [
+                'color_ar' => $variant->color_ar,
+                'color_en' => $variant->color_en,
+                'swatch' => $variant->color_hex,
+            ])->values()->all(),
             'in_stock' => $product->variants->sum('stock') > 0,
         ];
     }
@@ -59,6 +64,10 @@ final class Catalog
             'variants' => $product->variants->map(fn ($variant) => [
                 'id' => $variant->id,
                 'size' => $variant->size,
+                'color_ar' => $variant->color_ar,
+                'color_en' => $variant->color_en,
+                'color_hex' => $variant->color_hex,
+                'swatch' => $variant->color_hex,
                 'sku' => $variant->sku,
                 'stock' => $variant->stock,
             ])->values()->all(),
@@ -91,6 +100,9 @@ final class Catalog
                 'name_ar' => $item->name_ar,
                 'name_en' => $item->name_en,
                 'size' => $item->size,
+                'color_ar' => $item->color_ar,
+                'color_en' => $item->color_en,
+                'swatch' => $item->color_hex,
                 'sku' => $item->sku,
                 'quantity' => $item->quantity,
                 'unit_price' => Money::format($item->unit_price),

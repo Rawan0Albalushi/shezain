@@ -5,7 +5,22 @@ import { IconButton, Sheet } from '../../../Components/AdminUi';
 import { useLocale } from '../../../hooks';
 import { localized } from '../../../i18n';
 
-const emptyVariant = { size: '', sku: '', stock: 0 };
+const emptyVariant = { size: '', color_ar: '', color_en: '', color_hex: '', sku: '', stock: 0 };
+
+const colorSuggestions = [
+    { ar: 'أسود', en: 'Black', hex: '#1C1C1C' },
+    { ar: 'كحلي', en: 'Navy', hex: '#1B2A4A' },
+    { ar: 'بيج', en: 'Beige', hex: '#D7C4A3' },
+    { ar: 'رملي', en: 'Sand', hex: '#C4A574' },
+    { ar: 'بني', en: 'Brown', hex: '#6B4423' },
+    { ar: 'عنابي', en: 'Burgundy', hex: '#6B2430' },
+    { ar: 'رمادي', en: 'Grey', hex: '#8A8680' },
+    { ar: 'زيتي', en: 'Olive', hex: '#4E5340' },
+    { ar: 'حبري', en: 'Ink', hex: '#16181D' },
+    { ar: 'سكري', en: 'Cream', hex: '#F3E6D0' },
+    { ar: 'أبيض', en: 'White', hex: '#F7F4EF' },
+    { ar: 'أخضر', en: 'Green', hex: '#2F4A3C' },
+];
 
 export default function Form({ categories, product }) {
     const { locale, t } = useLocale();
@@ -19,7 +34,15 @@ export default function Form({ categories, product }) {
         fabric_en: product?.fabric_en ?? '',
         price: product?.price_omr ?? '',
         is_active: product?.is_active ?? true,
-        variants: product?.variants?.map((variant) => ({ id: variant.id, size: variant.size, sku: variant.sku, stock: variant.stock })) ?? [{ ...emptyVariant }],
+        variants: product?.variants?.map((variant) => ({
+            id: variant.id,
+            size: variant.size,
+            color_ar: variant.color_ar ?? '',
+            color_en: variant.color_en ?? '',
+            color_hex: variant.color_hex ?? '',
+            sku: variant.sku,
+            stock: variant.stock,
+        })) ?? [{ ...emptyVariant }],
         images: [],
         remove_images: [],
     });
@@ -35,11 +58,34 @@ export default function Form({ categories, product }) {
         }
     }
 
-    function setVariant(index, field, value) {
-        const variants = form.data.variants.map((variant, variantIndex) => (
-            variantIndex === index ? { ...variant, [field]: value } : variant
+    function setVariant(index, changes) {
+        form.setData('variants', form.data.variants.map((variant, variantIndex) => (
+            variantIndex === index ? { ...variant, ...changes } : variant
+        )));
+    }
+
+    function setColor(index, field, value) {
+        const current = form.data.variants[index];
+        const known = colorSuggestions.find((color) => (
+            field === 'color_ar'
+                ? color.ar === value.trim()
+                : color.en.toLowerCase() === value.trim().toLowerCase()
         ));
-        form.setData('variants', variants);
+        const changes = { [field]: value };
+
+        if (known && field === 'color_ar' && current.color_en.trim() === '') {
+            changes.color_en = known.en;
+        }
+
+        if (known && field === 'color_en' && current.color_ar.trim() === '') {
+            changes.color_ar = known.ar;
+        }
+
+        if (known && current.color_hex.trim() === '') {
+            changes.color_hex = known.hex;
+        }
+
+        setVariant(index, changes);
     }
 
     return (
@@ -94,22 +140,54 @@ export default function Form({ categories, product }) {
                 </Sheet>
                 <Sheet title={t('variants')} detail={t('variantsIntro')}>
                     {form.errors.variants && <p className="error-text">{form.errors.variants}</p>}
-                    <div className="variant-head">
-                        <span>{t('size')}</span>
-                        <span>{t('sku')}</span>
-                        <span>{t('stock')}</span>
-                        <span className="sr-only">{t('actions')}</span>
+                    <datalist id="abaya-colors">
+                        {colorSuggestions.map((color) => <option key={color.ar} value={color.ar}>{color.en}</option>)}
+                    </datalist>
+                    <div className="variant-list">
+                        {form.data.variants.map((variant, index) => {
+                            const hex = /^#[0-9A-Fa-f]{6}$/.test(variant.color_hex) ? variant.color_hex : null;
+
+                            return (
+                                <div className="variant-card" key={variant.id ?? index}>
+                                    <div className="variant-fields">
+                                        <label className="field">
+                                            <span>{t('size')}</span>
+                                            <input value={variant.size} onChange={(event) => setVariant(index, { size: event.target.value })} required />
+                                            {form.errors[`variants.${index}.size`] && <span className="error-text">{form.errors[`variants.${index}.size`]}</span>}
+                                        </label>
+                                        <label className="field">
+                                            <span>{t('colorAr')}</span>
+                                            <input list="abaya-colors" value={variant.color_ar} onChange={(event) => setColor(index, 'color_ar', event.target.value)} required />
+                                            {form.errors[`variants.${index}.color_ar`] && <span className="error-text">{form.errors[`variants.${index}.color_ar`]}</span>}
+                                        </label>
+                                        <label className="field">
+                                            <span>{t('colorEn')}</span>
+                                            <input value={variant.color_en} onChange={(event) => setColor(index, 'color_en', event.target.value)} required />
+                                            {form.errors[`variants.${index}.color_en`] && <span className="error-text">{form.errors[`variants.${index}.color_en`]}</span>}
+                                        </label>
+                                        <label className="field">
+                                            <span>{t('colorHex')} <span className="swatch" style={hex ? { background: hex } : undefined} /></span>
+                                            <input value={variant.color_hex} placeholder="#1C1C1C" onChange={(event) => setVariant(index, { color_hex: event.target.value })} />
+                                            {form.errors[`variants.${index}.color_hex`] && <span className="error-text">{form.errors[`variants.${index}.color_hex`]}</span>}
+                                        </label>
+                                        <label className="field">
+                                            <span>{t('sku')}</span>
+                                            <input value={variant.sku} onChange={(event) => setVariant(index, { sku: event.target.value })} required />
+                                            {form.errors[`variants.${index}.sku`] && <span className="error-text">{form.errors[`variants.${index}.sku`]}</span>}
+                                        </label>
+                                        <label className="field">
+                                            <span>{t('stock')}</span>
+                                            <input type="number" min="0" value={variant.stock} onChange={(event) => setVariant(index, { stock: Number(event.target.value) })} required />
+                                            {form.errors[`variants.${index}.stock`] && <span className="error-text">{form.errors[`variants.${index}.stock`]}</span>}
+                                        </label>
+                                    </div>
+                                    <IconButton label={t('remove')} onClick={() => form.setData('variants', form.data.variants.filter((_, variantIndex) => variantIndex !== index))}>
+                                        <CloseIcon />
+                                    </IconButton>
+                                </div>
+                            );
+                        })}
                     </div>
-                    {form.data.variants.map((variant, index) => (
-                        <div className="size-row" key={variant.id ?? index}>
-                            <input aria-label={t('size')} placeholder={t('size')} value={variant.size} onChange={(event) => setVariant(index, 'size', event.target.value)} required />
-                            <input aria-label={t('sku')} placeholder={t('sku')} value={variant.sku} onChange={(event) => setVariant(index, 'sku', event.target.value)} required />
-                            <input aria-label={t('stock')} type="number" min="0" value={variant.stock} onChange={(event) => setVariant(index, 'stock', Number(event.target.value))} required />
-                            <IconButton label={t('remove')} onClick={() => form.setData('variants', form.data.variants.filter((_, variantIndex) => variantIndex !== index))}>
-                                <CloseIcon />
-                            </IconButton>
-                        </div>
-                    ))}
                     <button type="button" className="secondary" onClick={() => form.setData('variants', [...form.data.variants, { ...emptyVariant }])}>{t('addSize')}</button>
                 </Sheet>
                 <Sheet title={t('images')}>

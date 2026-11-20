@@ -1,6 +1,7 @@
 import { useForm } from '@inertiajs/react';
 import AdminLayout from '../../Components/AdminLayout';
-import { Ledger, Sheet } from '../../Components/AdminUi';
+import { EyeIcon } from '../../Components/AdminIcons';
+import { IconButton, Ledger, Sheet } from '../../Components/AdminUi';
 import { useLocale } from '../../hooks';
 
 export default function Shipping({ rates, totals }) {
@@ -36,12 +37,13 @@ export default function Shipping({ rates, totals }) {
                                     <th>{t('governorate')}</th>
                                     <th>{t('shippingFee')}</th>
                                     <th>{t('appearance')}</th>
+                                    <th>{t('actions')}</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {form.data.rates.length === 0 && (
                                     <tr>
-                                        <td className="empty-row" colSpan={3}>{t('noMatches')}</td>
+                                        <td className="empty-row" colSpan={4}>{t('noMatches')}</td>
                                     </tr>
                                 )}
                                 {form.data.rates.map((rate, index) => (
@@ -61,6 +63,11 @@ export default function Shipping({ rates, totals }) {
                                                 <input type="checkbox" checked={rate.is_active} onChange={(event) => update(index, 'is_active', event.target.checked)} />
                                                 {t('active')}
                                             </label>
+                                        </td>
+                                        <td className="actions-cell">
+                                            <IconButton label={t('viewRate')} href={`/admin/shipping/${rate.id}`}>
+                                                <EyeIcon />
+                                            </IconButton>
                                         </td>
                                     </tr>
                                 ))}

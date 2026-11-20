@@ -1,7 +1,7 @@
 import { Head, useForm, usePage } from '@inertiajs/react';
 import StoreLayout from '../../Components/StoreLayout';
 import { useLocale } from '../../hooks';
-import { localized } from '../../i18n';
+import { localized, variantSummary } from '../../i18n';
 
 export default function Checkout({ lines, subtotal, subtotal_baisa: subtotalBaisa, rates, addresses }) {
     const { auth, thawaniSandbox } = usePage().props;
@@ -120,7 +120,7 @@ export default function Checkout({ lines, subtotal, subtotal_baisa: subtotalBais
                     <aside className="summary">
                         {lines.map((line) => (
                             <div className="split" key={line.variant_id} style={{ marginBottom: 12 }}>
-                                <span>{localized(locale, line, 'name')} · {line.size} × {line.quantity}</span>
+                                <span>{localized(locale, line, 'name')} · {variantSummary(locale, line)} × {line.quantity}</span>
                                 <span>{line.line_total_formatted}</span>
                             </div>
                         ))}

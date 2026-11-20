@@ -1,7 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
 import StoreLayout from '../../Components/StoreLayout';
 import { useLocale } from '../../hooks';
-import { localized } from '../../i18n';
+import { localized, variantSummary } from '../../i18n';
 
 export default function Cart({ lines, subtotal }) {
     const { locale, t } = useLocale();
@@ -23,7 +23,7 @@ export default function Cart({ lines, subtotal }) {
                                 {line.image && <img src={line.image} alt="" />}
                                 <div>
                                     <h3>{localized(locale, line, 'name')}</h3>
-                                    <p>{t('size')} {line.size} · {line.unit_price_formatted} {t('price')}</p>
+                                    <p>{variantSummary(locale, line)} · {line.unit_price_formatted} {t('price')}</p>
                                     <label>
                                         {t('quantity')}
                                         <input

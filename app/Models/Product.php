@@ -32,7 +32,7 @@ class Product extends Model
 
     public function variants(): HasMany
     {
-        return $this->hasMany(ProductVariant::class)->orderBy('size');
+        return $this->hasMany(ProductVariant::class)->orderBy('color_ar')->orderBy('size');
     }
 
     #[Scope]
