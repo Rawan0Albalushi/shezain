@@ -670,6 +670,10 @@ textarea {
     gap: 12px;
 }
 
+.order-items td {
+    vertical-align: middle;
+}
+
 .order-line-photo {
     flex: none;
     width: 84px;
@@ -1173,34 +1177,45 @@ textarea {
 }
 
 .status-panel {
-    padding: 16px 18px 18px;
+    padding: 28px 28px 24px;
 }
 
 .status-path {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px 0;
-    margin: 0 0 12px;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    margin: 0;
     padding: 0;
     list-style: none;
 }
 
 .status-path li {
+    position: relative;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 8px;
-    min-height: 36px;
-    color: #8d746c;
+    gap: 12px;
+    min-width: 0;
+    padding: 0 8px;
+    color: #5c414b;
     font-size: 14px;
     font-weight: 700;
+    line-height: 1.35;
+    text-align: center;
 }
 
-.status-path li + li::before {
+.status-path li:not(:last-child)::before {
     content: '';
-    width: 16px;
-    height: 1px;
-    margin-inline: 10px;
-    background: #c9b8b2;
+    position: absolute;
+    z-index: 0;
+    top: 10px;
+    inset-inline-start: calc(50% + 18px);
+    width: calc(100% - 36px);
+    height: 2px;
+    background: #d9ccc6;
+}
+
+.status-path .is-done:not(:last-child)::before {
+    background: #2c5a40;
 }
 
 .status-path .is-done {
@@ -1208,67 +1223,77 @@ textarea {
 }
 
 .status-path .is-current {
-    color: var(--ink);
-}
-
-.status-path .is-current span:last-child {
-    box-shadow: inset 0 -2px 0 var(--wine);
+    color: var(--wine);
 }
 
 .status-path-mark {
-    flex: none;
-    width: 9px;
-    height: 9px;
-    border: 1.5px solid currentColor;
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    border: 2px solid #7d6570;
     border-radius: 50%;
+    background: white;
+    color: white;
 }
 
-.status-path .is-done .status-path-mark,
+.status-path .is-done .status-path-mark {
+    border-color: #2c5a40;
+    background: #2c5a40;
+}
+
 .status-path .is-current .status-path-mark {
-    background: currentColor;
+    border-color: var(--wine);
+    background: var(--wine);
+}
+
+.status-path .is-current .status-path-mark::after {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: white;
+}
+
+.status-path-label {
+    max-width: 9em;
+}
+
+.status-next {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin-top: 26px;
+    padding-top: 22px;
+    border-top: 1px solid var(--line);
+    text-align: center;
 }
 
 .status-now,
-.status-ask,
-.status-warn,
-.status-action .sub {
+.status-warn {
     margin: 0;
-    max-width: 42ch;
-}
-
-.status-ask {
-    font-weight: 700;
+    max-width: 48ch;
 }
 
 .status-now {
+    width: fit-content;
     color: #5c414b;
 }
 
 .status-actions {
     display: flex;
     flex-wrap: wrap;
-    align-items: flex-start;
-    gap: 18px 28px;
-    margin-top: 16px;
-}
-
-.status-action {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 6px;
-    max-width: 36ch;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
 }
 
 .status-warn {
     color: #8a243c;
     font-weight: 700;
-}
-
-.status-confirm {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
 }
 
 .status-cancel,
@@ -1290,22 +1315,141 @@ textarea {
     color: var(--ink);
 }
 
-.status-action .primary:disabled,
+.status-actions .primary:disabled,
+.status-dialog .primary:disabled,
 .status-cancel:disabled,
 .status-dismiss:disabled {
     opacity: 0.65;
     cursor: default;
 }
 
-@media (max-width: 640px) {
-    .status-path {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 2px;
+.status-dialog {
+    width: min(28rem, calc(100vw - 32px));
+    margin: auto;
+    padding: 0;
+    border: 1px solid var(--line);
+    background: white;
+    color: var(--ink);
+    box-shadow: 0 18px 40px rgba(48, 22, 33, 0.16);
+}
+
+.status-dialog::backdrop {
+    background: rgba(48, 22, 33, 0.46);
+}
+
+.status-dialog[open] {
+    opacity: 1;
+    transform: translateY(0);
+    transition:
+        opacity 180ms cubic-bezier(0.22, 1, 0.36, 1),
+        transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@starting-style {
+    .status-dialog[open] {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+}
+
+.status-dialog-body {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 24px;
+}
+
+.status-dialog h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+.status-dialog-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.status-shift {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 12px;
+    margin: 0;
+}
+
+.status-shift > span {
+    padding: 8px 12px;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    font-weight: 700;
+    line-height: 1.35;
+}
+
+.status-shift .is-next {
+    border-color: #c9a3b4;
+    background: #f8eef2;
+    color: var(--wine);
+}
+
+.status-shift .is-cancel {
+    border-color: #e3c3cb;
+    background: #f8eef0;
+    color: #8a243c;
+}
+
+.status-shift-arrow {
+    flex: none;
+    color: #5c414b;
+}
+
+[dir='rtl'] .status-shift-arrow {
+    transform: scaleX(-1);
+}
+
+.status-dialog-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+@media (max-width: 720px) {
+    .status-panel {
+        padding: 20px 16px 18px;
     }
 
-    .status-path li + li::before {
-        content: none;
+    .status-path {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .status-path li {
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 14px;
+        min-height: 52px;
+        padding: 6px 0;
+        text-align: start;
+    }
+
+    .status-path li:not(:last-child)::before {
+        top: 50%;
+        inset-inline-start: 10px;
+        width: 2px;
+        height: 100%;
+    }
+
+    .status-path-label {
+        max-width: none;
+    }
+
+    .status-next {
+        margin-top: 20px;
+        padding-top: 18px;
     }
 }
 
@@ -1877,7 +2021,8 @@ th {
 @media (prefers-reduced-motion: reduce) {
     .hero-slide,
     .product img,
-    .ledger .stat-card {
+    .ledger .stat-card,
+    .status-dialog[open] {
         transition: none;
     }
 }

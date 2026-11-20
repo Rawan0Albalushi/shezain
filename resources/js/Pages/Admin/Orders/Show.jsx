@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from '@inertiajs/react';
 import AdminLayout from '../../../Components/AdminLayout';
 import { Sheet, StatusMark } from '../../../Components/AdminUi';
@@ -7,13 +7,27 @@ import { localized } from '../../../i18n';
 
 const fulfillment = ['pending_payment', 'paid', 'processing', 'shipped', 'delivered'];
 
+function StepMark({ done }) {
+    return (
+        <span className="status-path-mark" aria-hidden="true">
+            {done && (
+                <svg viewBox="0 0 16 16" width="12" height="12">
+                    <path d="M3.2 8.2 6.4 11.4 12.8 4.6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+            )}
+        </span>
+    );
+}
+
 export default function Show({ order, transitions }) {
     const { locale, t } = useLocale();
     const form = useForm({ status: '' });
+    const dialogRef = useRef(null);
     const [pendingStatus, setPendingStatus] = useState(null);
     const currentIndex = fulfillment.indexOf(order.status);
     const forward = transitions.filter((status) => status !== 'cancelled');
     const canCancel = transitions.includes('cancelled');
+    const canUpdate = forward.length > 0 || canCancel;
 
     function hint(status) {
         if (status === 'cancelled') {
@@ -23,50 +37,41 @@ export default function Show({ order, transitions }) {
         return t(`statusHint_${status}`);
     }
 
-    function confirmText(status) {
-        const mark = locale === 'ar' ? '؟' : '?';
+    function ask(status) {
+        form.clearErrors();
+        setPendingStatus(status);
+    }
 
-        return `${t('confirmStatusTo')} ${t(status)}${mark}`;
+    function dismiss() {
+        if (form.processing) {
+            return;
+        }
+
+        dialogRef.current?.close();
     }
 
     function submit(status) {
         form.clearErrors();
         form.transform(() => ({ status }));
         form.patch(`/admin/orders/${order.id}`, {
-            onFinish: () => setPendingStatus(null),
+            preserveScroll: true,
+            onSuccess: () => dialogRef.current?.close(),
         });
     }
 
-    function StatusAction({ status, tone }) {
-        const confirming = pendingStatus === status;
-        const buttonClass = tone === 'cancel' ? 'status-cancel' : 'primary';
+    useEffect(() => {
+        const dialog = dialogRef.current;
 
-        return (
-            <div className="status-action">
-                {confirming ? (
-                    <>
-                        <p className={tone === 'cancel' ? 'status-warn' : 'status-ask'}>{confirmText(status)}</p>
-                        <div className="status-confirm">
-                            <button type="button" className={buttonClass} disabled={form.processing} onClick={() => submit(status)}>
-                                {t('confirmStatus')}
-                            </button>
-                            <button type="button" className="status-dismiss" disabled={form.processing} onClick={() => setPendingStatus(null)}>
-                                {t('back')}
-                            </button>
-                        </div>
-                        <p className="sub">{hint(status)}</p>
-                    </>
-                ) : (
-                    <>
-                        <button type="button" className={buttonClass} disabled={form.processing} onClick={() => setPendingStatus(status)}>
-                            {t(`statusAction_${status}`)}
-                        </button>
-                        <p className="sub">{hint(status)}</p>
-                    </>
-                )}
-            </div>
-        );
-    }
+        if (!dialog || !pendingStatus) {
+            return;
+        }
+
+        if (!dialog.open) {
+            dialog.showModal();
+        }
+
+        dialog.querySelector('[data-confirm]')?.focus();
+    }, [pendingStatus]);
 
     return (
         <AdminLayout
@@ -105,7 +110,7 @@ export default function Show({ order, transitions }) {
             </div>
             <Sheet title={t('orderItems')}>
                 <div className="table-scroll">
-                    <table>
+                    <table className="order-items">
                         <thead>
                             <tr>
                                 <th>{t('products')}</th>
@@ -164,25 +169,82 @@ export default function Show({ order, transitions }) {
 
                                 return (
                                     <li key={status} className={state} aria-current={index === currentIndex ? 'step' : undefined}>
-                                        <span className="status-path-mark" aria-hidden="true" />
-                                        <span>{t(status)}</span>
+                                        <StepMark done={index < currentIndex} />
+                                        <span className="status-path-label">{t(status)}</span>
                                     </li>
                                 );
                             })}
                         </ol>
                     )}
-                    <p className="status-now">{t(`statusNow_${order.status}`)}</p>
-                    {(forward.length > 0 || canCancel) && (
-                        <div className="status-actions">
-                            {forward.map((status) => (
-                                <StatusAction key={status} status={status} tone="forward" />
-                            ))}
-                            {canCancel && <StatusAction status="cancelled" tone="cancel" />}
+                    {canUpdate && (
+                        <div className="status-next">
+                            <div className="status-actions">
+                                {forward.map((status) => (
+                                    <button key={status} type="button" className="primary" disabled={form.processing} onClick={() => ask(status)}>
+                                        {t(`statusAction_${status}`)}
+                                    </button>
+                                ))}
+                                {canCancel && (
+                                    <button type="button" className="status-cancel" disabled={form.processing} onClick={() => ask('cancelled')}>
+                                        {t('statusAction_cancelled')}
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     )}
-                    {form.errors.status && <p className="error-text" role="alert">{form.errors.status}</p>}
                 </div>
             </Sheet>
+            <dialog
+                ref={dialogRef}
+                className="status-dialog"
+                aria-labelledby="status-dialog-title"
+                aria-describedby="status-dialog-hint"
+                onClick={(event) => {
+                    if (event.target === dialogRef.current) {
+                        dismiss();
+                    }
+                }}
+                onCancel={(event) => {
+                    if (form.processing) {
+                        event.preventDefault();
+                    }
+                }}
+                onClose={() => {
+                    setPendingStatus(null);
+                    form.clearErrors();
+                }}
+            >
+                {pendingStatus && (
+                    <div className="status-dialog-body">
+                        <h2 id="status-dialog-title">{t(`statusAction_${pendingStatus}`)}</h2>
+                        <div className="status-dialog-copy">
+                            <p className="status-shift" aria-hidden="true">
+                                <span>{t(order.status)}</span>
+                                <svg className="status-shift-arrow" viewBox="0 0 20 20" width="18" height="18">
+                                    <path d="M4 10h12M12 6l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                                <span className={pendingStatus === 'cancelled' ? 'is-cancel' : 'is-next'}>{t(pendingStatus)}</span>
+                            </p>
+                            <p id="status-dialog-hint" className={pendingStatus === 'cancelled' ? 'status-warn' : 'status-now'}>{hint(pendingStatus)}</p>
+                            {form.errors.status && <p className="error-text" role="alert">{form.errors.status}</p>}
+                        </div>
+                        <div className="status-dialog-actions">
+                            <button
+                                type="button"
+                                data-confirm
+                                className={pendingStatus === 'cancelled' ? 'status-cancel' : 'primary'}
+                                disabled={form.processing}
+                                onClick={() => submit(pendingStatus)}
+                            >
+                                {t('confirmStatus')}
+                            </button>
+                            <button type="button" className="status-dismiss" disabled={form.processing} onClick={dismiss}>
+                                {t('back')}
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </dialog>
         </AdminLayout>
     );
 }

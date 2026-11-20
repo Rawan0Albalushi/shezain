@@ -39,7 +39,7 @@ final class SitePages
             'privacy' => [
                 'title_ar' => 'الخصوصية',
                 'title_en' => 'Privacy',
-                'body_ar' => 'نستخدم الاسم والجوال والبريد والعنوان لإتمام الطلب والشحن والتواصل بشأنه. الدفع يتم على صفحة ثواني، ولا تصلنا بيانات البطاقة. لا نبيع هذه البيانات. يمكنك طلب حذف حسابكِ بمراسلتنا من صفحة التواصل.',
+                'body_ar' => 'نستخدم الاسم ورقم الهاتف والبريد والعنوان لإتمام الطلب والشحن والتواصل بشأنه. الدفع يتم على صفحة ثواني، ولا تصلنا بيانات البطاقة. لا نبيع هذه البيانات. يمكنك طلب حذف حسابكِ بمراسلتنا من صفحة التواصل.',
                 'body_en' => 'We use your name, phone, email and address to complete the order, ship it, and contact you about it. Payment happens on Thawani’s page, and card details never reach us. We do not sell this information. You can ask us to delete your account from the contact page.',
             ],
         ];
