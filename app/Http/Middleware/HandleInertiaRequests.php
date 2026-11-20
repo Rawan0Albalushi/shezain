@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\Category;
+use App\Models\Message;
 use App\Models\Setting;
 use App\Services\Cart;
 use App\Services\Thawani\ThawaniClient;
@@ -44,6 +45,15 @@ class HandleInertiaRequests extends Middleware
                 'error' => fn () => $request->session()->get('error'),
             ],
             'thawaniSandbox' => fn () => app(ThawaniClient::class)->isSandbox(),
+            'adminNav' => function () use ($request, $user) {
+                if (! $user?->isAdmin() || ! $request->is('admin', 'admin/*')) {
+                    return null;
+                }
+
+                return [
+                    'unread' => Message::query()->whereNull('read_at')->count(),
+                ];
+            },
         ];
     }
 }

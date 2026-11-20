@@ -11,6 +11,7 @@ use App\Models\ProductVariant;
 use App\Support\Catalog;
 use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -19,17 +20,70 @@ use Inertia\Response;
 
 class ProductController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        return Inertia::render('Admin/Products/Index', [
-            'products' => Product::query()->with('category')->latest()->paginate(20)->through(fn (Product $product) => [
+        $search = Str::of($request->string('q')->trim()->toString())->limit(80, '')->toString();
+        $category = $request->string('category')->toString();
+        $visibility = $request->string('visibility')->toString();
+        $stock = $request->string('stock')->toString();
+
+        if (! in_array($visibility, ['active', 'hidden'], true)) {
+            $visibility = '';
+        }
+
+        if (! in_array($stock, ['in', 'low', 'out'], true)) {
+            $stock = '';
+        }
+
+        $products = Product::query()
+            ->with(['category:id,slug,name_ar,name_en', 'images'])
+            ->withSum('variants', 'stock')
+            ->when($search !== '', function ($query) use ($search) {
+                $like = '%'.addcslashes($search, '%_\\').'%';
+                $query->where(function ($query) use ($like) {
+                    $query->where('name_ar', 'like', $like)
+                        ->orWhere('name_en', 'like', $like)
+                        ->orWhere('slug', 'like', $like)
+                        ->orWhereHas('variants', fn ($variants) => $variants->where('sku', 'like', $like));
+                });
+            })
+            ->when($category !== '', fn ($query) => $query->whereHas('category', fn ($categories) => $categories->where('slug', $category)))
+            ->when($visibility === 'active', fn ($query) => $query->where('is_active', true))
+            ->when($visibility === 'hidden', fn ($query) => $query->where('is_active', false))
+            ->when($stock !== '', fn ($query) => $query->stockState($stock))
+            ->latest()
+            ->paginate(20)
+            ->withQueryString()
+            ->through(fn (Product $product) => [
                 'id' => $product->id,
+                'slug' => $product->slug,
                 'name_ar' => $product->name_ar,
                 'name_en' => $product->name_en,
-                'category_ar' => $product->category->name_ar,
+                'category_ar' => $product->category?->name_ar,
+                'category_en' => $product->category?->name_en,
                 'price' => Money::format($product->price),
                 'is_active' => $product->is_active,
-            ]),
+                'stock' => (int) $product->variants_sum_stock,
+                'image' => Catalog::imageUrl($product->images->first()),
+            ]);
+
+        return Inertia::render('Admin/Products/Index', [
+            'products' => $products,
+            'categories' => Category::query()->orderBy('sort')->get(['slug', 'name_ar', 'name_en']),
+            'filters' => [
+                'q' => $search,
+                'category' => $category,
+                'visibility' => $visibility,
+                'stock' => $stock,
+            ],
+            'totals' => [
+                'all' => Product::query()->count(),
+                'active' => Product::query()->where('is_active', true)->count(),
+                'hidden' => Product::query()->where('is_active', false)->count(),
+                'in' => Product::query()->stockState('in')->count(),
+                'low' => Product::query()->lowStock()->count(),
+                'out' => Product::query()->outOfStock()->count(),
+            ],
         ]);
     }
 
@@ -102,6 +156,13 @@ class ProductController extends Controller
         $this->syncVariants($product, $data['variants']);
         $this->removeImages($product, $data['remove_images'] ?? []);
         $this->storeImages($product, $request);
+
+        return back()->with('success', __('store.saved'));
+    }
+
+    public function visibility(Product $product): RedirectResponse
+    {
+        $product->update(['is_active' => ! $product->is_active]);
 
         return back()->with('success', __('store.saved'));
     }

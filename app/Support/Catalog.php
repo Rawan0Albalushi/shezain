@@ -91,6 +91,7 @@ final class Catalog
                 'name_ar' => $item->name_ar,
                 'name_en' => $item->name_en,
                 'size' => $item->size,
+                'sku' => $item->sku,
                 'quantity' => $item->quantity,
                 'unit_price' => Money::format($item->unit_price),
                 'line_total' => Money::format($item->line_total),

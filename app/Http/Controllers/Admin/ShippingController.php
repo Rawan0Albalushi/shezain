@@ -14,14 +14,23 @@ class ShippingController extends Controller
 {
     public function edit(): Response
     {
+        $rates = ShippingRate::query()->orderBy('sort')->get();
+        $activeFees = $rates->where('is_active', true)->pluck('fee');
+
         return Inertia::render('Admin/Shipping', [
-            'rates' => ShippingRate::query()->orderBy('sort')->get()->map(fn (ShippingRate $rate) => [
+            'rates' => $rates->map(fn (ShippingRate $rate) => [
                 'id' => $rate->id,
                 'governorate_ar' => $rate->governorate_ar,
                 'governorate_en' => $rate->governorate_en,
                 'fee' => Money::format($rate->fee),
                 'is_active' => $rate->is_active,
             ]),
+            'totals' => [
+                'count' => $rates->count(),
+                'active' => $rates->where('is_active', true)->count(),
+                'paused' => $rates->where('is_active', false)->count(),
+                'highest' => Money::format((int) ($activeFees->max() ?? 0)),
+            ],
         ]);
     }
 
