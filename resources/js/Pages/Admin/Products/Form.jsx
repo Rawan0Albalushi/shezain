@@ -1,4 +1,5 @@
 import { useForm } from '@inertiajs/react';
+import { useEffect, useRef, useState } from 'react';
 import AdminLayout from '../../../Components/AdminLayout';
 import { CloseIcon } from '../../../Components/AdminIcons';
 import { IconButton, Sheet } from '../../../Components/AdminUi';
@@ -46,16 +47,57 @@ export default function Form({ categories, product }) {
         images: [],
         remove_images: [],
     });
+    const fileInput = useRef(null);
+    const [previews, setPreviews] = useState([]);
+    const records = product?.image_records ?? [];
+    const keptCount = records.filter((image) => !form.data.remove_images.includes(image.id)).length;
+    const room = Math.max(0, 6 - keptCount - form.data.images.length);
+
+    useEffect(() => {
+        const next = form.data.images.map((file) => ({
+            name: file.name,
+            url: URL.createObjectURL(file),
+        }));
+        setPreviews(next);
+
+        return () => next.forEach((item) => URL.revokeObjectURL(item.url));
+    }, [form.data.images]);
+
+    function toggleRemoval(id) {
+        const marked = form.data.remove_images.includes(id);
+        form.setData('remove_images', marked
+            ? form.data.remove_images.filter((imageId) => imageId !== id)
+            : [...form.data.remove_images, id]);
+    }
+
+    function addImages(fileList) {
+        if (!fileList || fileList.length === 0) {
+            return;
+        }
+
+        const accepted = Array.from(fileList).slice(0, room);
+
+        if (accepted.length === 0) {
+            return;
+        }
+
+        form.setData('images', [...form.data.images, ...accepted]);
+
+        if (fileInput.current) {
+            fileInput.current.value = '';
+        }
+    }
 
     function submit(event) {
         event.preventDefault();
-        const options = { forceFormData: true };
 
-        if (product) {
-            form.put(`/admin/products/${product.id}`, options);
-        } else {
-            form.post('/admin/products', options);
-        }
+        form.transform((data) => (
+            product ? { ...data, _method: 'put' } : data
+        ));
+
+        form.post(product ? `/admin/products/${product.id}` : '/admin/products', {
+            forceFormData: true,
+        });
     }
 
     function setVariant(index, changes) {
@@ -191,32 +233,63 @@ export default function Form({ categories, product }) {
                     <button type="button" className="secondary" onClick={() => form.setData('variants', [...form.data.variants, { ...emptyVariant }])}>{t('addSize')}</button>
                 </Sheet>
                 <Sheet title={t('images')}>
-                    <div className="thumbs admin-thumbs">
-                        {(product?.image_records ?? []).map((image) => {
-                            const marked = form.data.remove_images.includes(image.id);
+                    {records.length === 0 && previews.length === 0 && (
+                        <p className="sheet-note">{t('noPhotos')}</p>
+                    )}
+                    {(records.length > 0 || previews.length > 0) && (
+                        <div className="photo-desk">
+                            {records.map((image) => {
+                                const marked = form.data.remove_images.includes(image.id);
 
-                            return (
-                                <label key={image.id} className={marked ? 'is-marked' : undefined}>
-                                    <img src={image.url} alt="" />
-                                    <span>{marked ? t('willRemove') : t('removeImage')}</span>
-                                    <input
-                                        type="checkbox"
-                                        checked={marked}
-                                        onChange={(event) => {
-                                            const ids = event.target.checked
-                                                ? [...form.data.remove_images, image.id]
-                                                : form.data.remove_images.filter((id) => id !== image.id);
-                                            form.setData('remove_images', ids);
-                                        }}
-                                    />
-                                </label>
-                            );
-                        })}
+                                return (
+                                    <div key={image.id} className={marked ? 'photo-card is-marked' : 'photo-card'}>
+                                        <div className="photo-frame">
+                                            <img src={image.url} alt="" />
+                                            {marked && <p className="photo-flag">{t('willRemove')}</p>}
+                                        </div>
+                                        <button
+                                            type="button"
+                                            className={marked ? 'photo-keep' : 'photo-delete'}
+                                            aria-pressed={marked}
+                                            onClick={() => toggleRemoval(image.id)}
+                                        >
+                                            {marked ? t('undoRemove') : t('removeImage')}
+                                        </button>
+                                    </div>
+                                );
+                            })}
+                            {previews.map((preview, index) => (
+                                <div key={`${preview.name}-${index}`} className="photo-card is-new">
+                                    <div className="photo-frame">
+                                        <img src={preview.url} alt="" />
+                                        <p className="photo-flag">{t('newPhoto')}</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        className="photo-delete"
+                                        onClick={() => form.setData('images', form.data.images.filter((_, imageIndex) => imageIndex !== index))}
+                                    >
+                                        {t('removeImage')}
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    <div className="photo-add">
+                        <input
+                            ref={fileInput}
+                            className="sr-only"
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            multiple
+                            onChange={(event) => addImages(event.target.files)}
+                        />
+                        <button type="button" disabled={room === 0} onClick={() => fileInput.current?.click()}>
+                            {t('addImages')}
+                        </button>
+                        <p>{room === 0 ? t('imageLimitReached') : t('imageHint')}</p>
+                        {form.errors.images && <p className="error-text">{form.errors.images}</p>}
                     </div>
-                    <label className="field">
-                        <span>{t('addImages')}</span>
-                        <input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={(event) => form.setData('images', Array.from(event.target.files))} />
-                    </label>
                 </Sheet>
                 <button className="primary" disabled={form.processing} type="submit">{t('save')}</button>
             </form>

@@ -25,53 +25,57 @@ export default function Show({ product }) {
             )}
         >
             <Sheet title={t('productDetails')}>
-                {current ? (
-                    <div className="admin-photo">
-                        <img src={current} alt="" />
+                <div className="admin-product-view">
+                    <div className="admin-gallery">
+                        {current ? (
+                            <div className="admin-photo">
+                                <img src={current} alt="" />
+                            </div>
+                        ) : (
+                            <p className="sheet-note">{t('noPhotos')}</p>
+                        )}
+                        {images.length > 1 && (
+                            <div className="admin-thumbs">
+                                {images.map((image, index) => (
+                                    <button
+                                        type="button"
+                                        key={`${image}-${index}`}
+                                        className={index === photo ? 'is-current' : undefined}
+                                        aria-label={t('slide')}
+                                        aria-current={index === photo ? 'true' : undefined}
+                                        onClick={() => setPhoto(index)}
+                                    >
+                                        <img src={image} alt="" />
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
-                ) : (
-                    <p className="sheet-note">{t('noPhotos')}</p>
-                )}
-                {images.length > 1 && (
-                    <div className="admin-thumbs">
-                        {images.map((image, index) => (
-                            <button
-                                type="button"
-                                key={`${image}-${index}`}
-                                className={index === photo ? 'is-current' : undefined}
-                                aria-label={t('slide')}
-                                aria-current={index === photo ? 'true' : undefined}
-                                onClick={() => setPhoto(index)}
-                            >
-                                <img src={image} alt="" />
-                            </button>
-                        ))}
-                    </div>
-                )}
-                <dl className="meta">
-                    <dt>{t('nameAr')}</dt>
-                    <dd>{product.name_ar}</dd>
-                    <dt>{t('nameEn')}</dt>
-                    <dd>{product.name_en}</dd>
-                    <dt>{t('category')}</dt>
-                    <dd>{locale === 'ar' ? product.category_ar : product.category_en}</dd>
-                    <dt>{t('price')}</dt>
-                    <dd className="num">{product.price}</dd>
-                    <dt>{t('stock')}</dt>
-                    <dd>{product.stock} {t('pieces')}</dd>
-                    {product.fabric_ar && (
-                        <>
-                            <dt>{t('fabricAr')}</dt>
-                            <dd>{product.fabric_ar}</dd>
-                        </>
-                    )}
-                    {product.fabric_en && (
-                        <>
-                            <dt>{t('fabricEn')}</dt>
-                            <dd>{product.fabric_en}</dd>
-                        </>
-                    )}
-                </dl>
+                    <dl className="meta">
+                        <dt>{t('nameAr')}</dt>
+                        <dd>{product.name_ar}</dd>
+                        <dt>{t('nameEn')}</dt>
+                        <dd>{product.name_en}</dd>
+                        <dt>{t('category')}</dt>
+                        <dd>{locale === 'ar' ? product.category_ar : product.category_en}</dd>
+                        <dt>{t('price')}</dt>
+                        <dd className="num">{product.price}</dd>
+                        <dt>{t('stock')}</dt>
+                        <dd>{product.stock} {t('pieces')}</dd>
+                        {product.fabric_ar && (
+                            <>
+                                <dt>{t('fabricAr')}</dt>
+                                <dd>{product.fabric_ar}</dd>
+                            </>
+                        )}
+                        {product.fabric_en && (
+                            <>
+                                <dt>{t('fabricEn')}</dt>
+                                <dd>{product.fabric_en}</dd>
+                            </>
+                        )}
+                    </dl>
+                </div>
             </Sheet>
             {(product.description_ar || product.description_en) && (
                 <div className="admin-split">

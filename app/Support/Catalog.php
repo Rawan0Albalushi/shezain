@@ -79,6 +79,8 @@ final class Catalog
      */
     public static function order(Order $order): array
     {
+        $order->loadMissing('items.product.images');
+
         return [
             'public_id' => $order->public_id,
             'number' => $order->number,
@@ -99,6 +101,7 @@ final class Catalog
             'items' => $order->items->map(fn ($item) => [
                 'name_ar' => $item->name_ar,
                 'name_en' => $item->name_en,
+                'image' => self::imageUrl($item->product?->images->first()),
                 'size' => $item->size,
                 'color_ar' => $item->color_ar,
                 'color_en' => $item->color_en,

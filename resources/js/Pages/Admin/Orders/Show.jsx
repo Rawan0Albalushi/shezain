@@ -120,7 +120,16 @@ export default function Show({ order, transitions }) {
                         <tbody>
                             {order.items.map((item, index) => (
                                 <tr key={`${item.sku ?? index}`}>
-                                    <td>{localized(locale, item, 'name')}</td>
+                                    <td>
+                                        <span className="order-line">
+                                            {item.image && (
+                                                <span className="order-line-photo">
+                                                    <img src={item.image} alt="" />
+                                                </span>
+                                            )}
+                                            <span>{localized(locale, item, 'name')}</span>
+                                        </span>
+                                    </td>
                                     <td>
                                         <span className="color-cell">
                                             <span className="swatch" style={item.swatch ? { background: item.swatch } : undefined} />
