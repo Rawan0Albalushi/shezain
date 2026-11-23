@@ -44,8 +44,13 @@ const dictionary = {
         shippingFee: 'الشحن',
         total: 'الإجمالي',
         emptyBag: 'سلتكِ فارغة.',
+        emptyBagHint: 'اختاري عباية من المجموعة.',
+        fromCollection: 'من المجموعة',
         continue: 'متابعة التسوق',
         remove: 'حذف',
+        decrease: 'إنقاص الكمية',
+        increase: 'زيادة الكمية',
+        shippingLater: 'يُحسب الشحن عند إتمام الطلب.',
         name: 'الاسم',
         phone: 'رقم الهاتف',
         email: 'البريد',
@@ -299,8 +304,13 @@ const dictionary = {
         shippingFee: 'Shipping',
         total: 'Total',
         emptyBag: 'Your bag is empty.',
+        emptyBagHint: 'Choose an abaya from the collection.',
+        fromCollection: 'From the collection',
         continue: 'Continue shopping',
         remove: 'Remove',
+        decrease: 'Decrease quantity',
+        increase: 'Increase quantity',
+        shippingLater: 'Shipping is calculated at checkout.',
         name: 'Name',
         phone: 'Phone',
         email: 'Email',
@@ -525,4 +535,40 @@ export function localized(locale, item, field) {
 
 export function variantSummary(locale, item) {
     return [localized(locale, item, 'color'), item?.size].filter(Boolean).join(' · ');
+}
+
+export function pieceCount(locale, count) {
+    if (locale === 'en') {
+        return count === 1 ? '1 piece' : `${count} pieces`;
+    }
+
+    if (count === 1) {
+        return 'قطعة واحدة';
+    }
+
+    if (count === 2) {
+        return 'قطعتان';
+    }
+
+    if (count >= 3 && count <= 10) {
+        return `${count} قطع`;
+    }
+
+    return `${count} قطعة`;
+}
+
+export function stockLeft(locale, stock) {
+    if (locale === 'en') {
+        return stock === 1 ? '1 left' : `${stock} left`;
+    }
+
+    if (stock === 1) {
+        return 'آخر قطعة';
+    }
+
+    if (stock === 2) {
+        return 'قطعتان متبقيتان';
+    }
+
+    return `${stock} قطع متبقية`;
 }

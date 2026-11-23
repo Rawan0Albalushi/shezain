@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Store;
 
 use App\Http\Controllers\Controller;
+use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Services\Cart;
+use App\Support\Catalog;
 use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,6 +22,7 @@ class CartController extends Controller
         return Inertia::render('Store/Cart', [
             'lines' => $lines,
             'subtotal' => Money::format($lines->sum('line_total')),
+            'suggestions' => $lines->isEmpty() ? $this->suggestions() : [],
         ]);
     }
 
@@ -44,6 +47,22 @@ class CartController extends Controller
         $cart->update($variant->id, $data['quantity']);
 
         return back();
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function suggestions(): array
+    {
+        return Product::query()
+            ->with(['category', 'images', 'variants'])
+            ->where('is_active', true)
+            ->whereHas('variants', fn ($query) => $query->where('stock', '>', 0))
+            ->latest()
+            ->limit(4)
+            ->get()
+            ->map(fn (Product $product) => Catalog::card($product))
+            ->all();
     }
 
     public function destroy(ProductVariant $variant, Cart $cart): RedirectResponse
