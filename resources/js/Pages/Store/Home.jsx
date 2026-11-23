@@ -112,14 +112,12 @@ export default function Home({ filters, products, slides }) {
                         router.get('/', { category: filters.category, q: query }, { preserveState: true, preserveScroll: true });
                     }}
                 >
-                    <label className="field" style={{ flex: 1 }}>
+                    <label className="field">
                         <span className="sr-only">{t('search')}</span>
                         <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t('search')} aria-label={t('search')} />
                     </label>
                     <button className="primary" type="submit">{t('search')}</button>
                 </form>
-                <p className="sample-note">{t('note')}</p>
-                <p className="sample-note">{t('sample')}</p>
                 {products.data.length === 0 ? <p>{t('empty')}</p> : (
                     <div className="products">
                         {products.data.map((product) => (

@@ -15,7 +15,6 @@ const dictionary = {
         playLabel: 'تشغيل تبديل الصور',
         slide: 'عرض الصورة',
         collection: 'مجموعة شيزين',
-        note: 'مقاسات 52 إلى 60 · الشحن داخل سلطنة عُمان',
         empty: 'لا توجد عبايات في هذا القسم الآن.',
         search: 'ابحثي عن عباية',
         find: 'بحث',
@@ -254,7 +253,6 @@ const dictionary = {
         setting_brand_title_en: 'العنوان بالإنجليزية',
         setting_brand_text_ar: 'النص بالعربية',
         setting_brand_text_en: 'النص بالإنجليزية',
-        sample: 'الصور الحالية للتعبير عن أجواء العلامة إلى أن تصل صور العبايات.',
     },
     en: {
         navLabel: 'Shop collections',
@@ -272,7 +270,6 @@ const dictionary = {
         playLabel: 'Play slideshow',
         slide: 'Show image',
         collection: 'SHEZAIN collections',
-        note: 'Sizes 52 to 60 · Delivery across Oman',
         empty: 'No abayas in this collection yet.',
         search: 'Search abayas',
         find: 'Search',
@@ -511,7 +508,6 @@ const dictionary = {
         setting_brand_title_en: 'English title',
         setting_brand_text_ar: 'Arabic text',
         setting_brand_text_en: 'English text',
-        sample: 'These photographs set the brand mood until the abaya photos arrive.',
     },
 };
 
